@@ -282,41 +282,46 @@ export default function Home() {
           </div>
 
           {isLoadingCategories ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="w-full aspect-square rounded-2xl" />)}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="w-full aspect-[3/4] rounded-2xl" />)}
             </div>
           ) : categories && categories.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-5">
               {categories.slice(0, 5).map((category, idx) => {
-                const EMOJIS: Record<string, string> = { Burgers: "🍔", Pizza: "🍕", Deals: "🎯", Sides: "🍟", Drinks: "🥤" };
-                const emoji = EMOJIS[category.name] ?? "🍽️";
                 const GRADIENTS = [
-                  "from-orange-400/80 to-red-500/80",
-                  "from-amber-400/80 to-orange-500/80",
-                  "from-primary/80 to-primary/60",
-                  "from-green-500/80 to-emerald-600/80",
-                  "from-blue-500/80 to-indigo-600/80",
+                  "from-orange-500 to-red-600",
+                  "from-red-500 to-rose-600",
+                  "from-primary to-primary/70",
+                  "from-green-600 to-emerald-700",
+                  "from-blue-600 to-indigo-700",
                 ];
                 return (
                   <Link key={category.id} href={rpath(`/menu/${category.id}`)}>
-                    <div className="group relative rounded-2xl overflow-hidden aspect-square cursor-pointer bg-muted shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5">
+                    <div className="group relative rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer bg-muted shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
                       {category.imageUrl ? (
-                        <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        <img
+                          src={category.imageUrl}
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          loading="lazy"
+                          crossOrigin="anonymous"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
                       ) : (
                         <div className={cn("w-full h-full bg-gradient-to-br", GRADIENTS[idx % GRADIENTS.length])} />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-                      <div className="absolute inset-0 flex flex-col justify-between p-4">
-                        <span className="text-3xl md:text-4xl drop-shadow-lg">{emoji}</span>
-                        <div>
-                          <h3 className="text-white font-serif font-bold text-base md:text-xl leading-tight">
-                            {category.name}
-                          </h3>
-                          <div className="flex items-center gap-1 mt-1 text-white/60 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span>Explore</span>
-                            <ArrowRight className="h-3 w-3" />
-                          </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 className="text-white font-serif font-bold text-lg md:text-xl leading-tight drop-shadow-lg">
+                          {category.name}
+                        </h3>
+                        <div className="flex items-center gap-1 mt-1.5 text-white/70 text-xs group-hover:text-white/90 transition-colors">
+                          <span>Explore</span>
+                          <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
                         </div>
+                      </div>
+                      <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm border border-white/30 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        Browse
                       </div>
                     </div>
                   </Link>

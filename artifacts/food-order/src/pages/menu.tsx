@@ -221,23 +221,29 @@ export default function Menu() {
         tabsStuck && "shadow-sm"
       )}>
         <div className="container mx-auto px-4">
-          <div ref={tabsRef} className="flex items-center gap-1.5 overflow-x-auto py-3 scrollbar-none">
+          <div ref={tabsRef} className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
             {isLoadingCategories ? (
               <div className="flex gap-2">
-                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />)}
+                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-28 rounded-full shrink-0" />)}
               </div>
             ) : (
               <>
                 <Link href={rpath("/menu")}>
                   <button className={cn(
-                    "shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap border",
+                    "shrink-0 flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap border",
                     !activeCategoryId
                       ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
                       : "bg-background border-border/60 text-foreground/60 hover:border-primary/40 hover:text-primary"
                   )}>
-                    All Items
+                    <span className={cn(
+                      "w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                      !activeCategoryId ? "bg-white/20" : "bg-muted"
+                    )}>
+                      🍽️
+                    </span>
+                    All
                     {!activeCategoryId && items && (
-                      <span className="ml-1.5 opacity-70 text-xs">({items.length})</span>
+                      <span className="opacity-60 text-xs">({items.length})</span>
                     )}
                   </button>
                 </Link>
@@ -246,12 +252,24 @@ export default function Menu() {
                     <button
                       data-cat={cat.id}
                       className={cn(
-                        "shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap border",
+                        "shrink-0 flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap border",
                         activeCategoryId === cat.id
                           ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
                           : "bg-background border-border/60 text-foreground/60 hover:border-primary/40 hover:text-primary"
                       )}
                     >
+                      <span className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-border/40">
+                        {cat.imageUrl ? (
+                          <img
+                            src={cat.imageUrl}
+                            alt={cat.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="w-full h-full flex items-center justify-center bg-primary/10 text-sm">🍽️</span>
+                        )}
+                      </span>
                       {cat.name}
                     </button>
                   </Link>
@@ -322,23 +340,6 @@ export default function Menu() {
         )}
       </div>
 
-      {/* Floating Cart Button */}
-      {itemCount > 0 && (
-        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-40 pointer-events-none px-4">
-          <Link href={rpath("/checkout")}>
-            <Button
-              size="lg"
-              className="pointer-events-auto rounded-full px-8 py-6 shadow-2xl shadow-primary/30 gap-3 text-base font-semibold animate-in slide-in-from-bottom-4 duration-300"
-            >
-              <ShoppingBag className="h-5 w-5" />
-              View Cart
-              <span className="bg-white/20 text-white text-sm font-bold px-2.5 py-0.5 rounded-full">
-                {itemCount}
-              </span>
-            </Button>
-          </Link>
-        </div>
-      )}
     </Layout>
   );
 }

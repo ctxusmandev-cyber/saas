@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +6,7 @@ import { CartProvider } from "./lib/cart";
 import { AdminAuthProvider, SuperAdminProvider } from "./lib/admin-auth";
 import { AdminGuard } from "@/components/admin-guard";
 import { RestaurantProvider } from "@/lib/restaurant-context";
+import { useEffect } from "react";
 
 import Home from "@/pages/home";
 import Menu from "@/pages/menu";
@@ -25,6 +26,14 @@ import TrackOrder from "@/pages/track-order";
 import Receipt from "@/pages/receipt";
 import SuperAdminLogin from "@/pages/super-admin/login";
 import SuperAdminDashboard from "@/pages/super-admin/index";
+
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location]);
+  return null;
+}
 
 function R({
   slug,
@@ -46,6 +55,8 @@ function R({
 
 function Router() {
   return (
+    <>
+    <ScrollToTop />
     <Switch>
       {/* ── Super admin ─────────────────────────────── */}
       <Route path="/super-admin/login" component={SuperAdminLogin} />
@@ -134,6 +145,7 @@ function Router() {
         </div>
       </Route>
     </Switch>
+    </>
   );
 }
 

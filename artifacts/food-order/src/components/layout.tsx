@@ -229,6 +229,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
+      {/* ── Floating Cart Button (all pages except checkout/admin) ─── */}
+      {itemCount > 0 && !location.includes("/checkout") && !location.includes("/admin") && (
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-40 pointer-events-none px-4">
+          <Link href={rpath("/checkout")}>
+            <button className="pointer-events-auto flex items-center gap-3 bg-primary text-primary-foreground rounded-full pl-4 pr-5 py-3.5 shadow-2xl shadow-primary/40 hover:shadow-primary/60 hover:scale-105 active:scale-95 transition-all duration-300 font-semibold text-sm md:text-base">
+              <span className="bg-white/20 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">
+                {itemCount}
+              </span>
+              <ShoppingBag className="h-4 w-4 shrink-0" />
+              View Cart
+              <span className="ml-1 opacity-80 text-xs md:text-sm font-normal">
+                · Rs {total.toLocaleString("en-PK")}
+              </span>
+            </button>
+          </Link>
+        </div>
+      )}
+
       {/* ── Footer ───────────────────────────────────────────────────────── */}
       <footer className="bg-zinc-950 text-zinc-300 mt-16">
         <div className="container mx-auto px-4 py-16">

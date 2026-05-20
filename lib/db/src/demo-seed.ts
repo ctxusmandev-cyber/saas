@@ -305,7 +305,7 @@ async function seed() {
   for (const cat of CATEGORIES) {
     const [inserted] = await db
       .insert(schema.categoriesTable)
-      .values({ name: cat.name, slug: cat.slug, restaurantId: restaurant.id })
+      .values({ name: cat.name, slug: cat.slug, imageUrl: cat.imageUrl, restaurantId: restaurant.id })
       .returning();
 
     categoryMap[cat.name] = inserted.id;
