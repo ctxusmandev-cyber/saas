@@ -13,11 +13,11 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
 
 const CATEGORIES = [
-  { name: "Burgers",   slug: "burgers",  sortOrder: 1 },
-  { name: "Pizza",     slug: "pizza",    sortOrder: 2 },
-  { name: "Deals",     slug: "deals",    sortOrder: 3 },
-  { name: "Sides",     slug: "sides",    sortOrder: 4 },
-  { name: "Drinks",    slug: "drinks",   sortOrder: 5 },
+  { name: "Burgers", slug: "burgers", sortOrder: 1, imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80" },
+  { name: "Pizza",   slug: "pizza",   sortOrder: 2, imageUrl: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&q=80" },
+  { name: "Deals",   slug: "deals",   sortOrder: 3, imageUrl: "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=600&q=80" },
+  { name: "Sides",   slug: "sides",   sortOrder: 4, imageUrl: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&q=80" },
+  { name: "Drinks",  slug: "drinks",  sortOrder: 5, imageUrl: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=600&q=80" },
 ];
 
 const ITEMS: Record<string, { name: string; description: string; price: number; imageUrl: string; featured?: boolean; prepTimeMinutes?: number }[]> = {
@@ -716,6 +716,24 @@ async function seed() {
   }
 
   console.log(`\n✅ Seeded ${orderCount} demo orders\n`);
+
+  // ── 6. Seed demo coupons ──────────────────────────────────────────────────
+  await db.delete(schema.couponsTable).where(eq(schema.couponsTable.restaurantId, restaurant.id));
+
+  const demoCoupons = [
+    { code: "WELCOME20", description: "Welcome discount — 20% off your first order", discountType: "percentage" as const, discountValue: "20", minOrderAmount: "500", maxUses: 100, active: true },
+    { code: "SAVE100", description: "Rs 100 flat discount on orders above Rs 800", discountType: "fixed" as const, discountValue: "100", minOrderAmount: "800", maxUses: null, active: true },
+    { code: "TERRA15", description: "15% off — exclusive Terra promo", discountType: "percentage" as const, discountValue: "15", minOrderAmount: null, maxUses: 50, active: true },
+    { code: "FREEDELIVERY", description: "Free delivery promo (Rs 150 off)", discountType: "fixed" as const, discountValue: "150", minOrderAmount: "600", maxUses: 200, active: true },
+    { code: "BIGORDER25", description: "25% off on orders above Rs 2,000", discountType: "percentage" as const, discountValue: "25", minOrderAmount: "2000", maxUses: 30, active: true },
+  ];
+
+  for (const coupon of demoCoupons) {
+    await db.insert(schema.couponsTable).values({ ...coupon, restaurantId: restaurant.id });
+    console.log(`🎟  Coupon: ${coupon.code} — ${coupon.discountType === "percentage" ? coupon.discountValue + "% off" : "Rs " + coupon.discountValue + " off"}`);
+  }
+  console.log("\n✅ Demo coupons created\n");
+
   console.log("🎉 Terra is now demo-ready!\n");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("   Admin URL  : /r/terra/admin/login");

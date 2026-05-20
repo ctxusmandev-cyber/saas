@@ -20,6 +20,7 @@ import AdminOrders from "@/pages/admin/orders";
 import AdminAppearance from "@/pages/admin/appearance";
 import AdminRiders from "@/pages/admin/riders";
 import AdminSettings from "@/pages/admin/settings";
+import AdminCoupons from "@/pages/admin/coupons";
 import TrackOrder from "@/pages/track-order";
 import Receipt from "@/pages/receipt";
 import SuperAdminLogin from "@/pages/super-admin/login";
@@ -87,6 +88,9 @@ function Router() {
       </Route>
       <Route path="/r/:slug/admin/settings">
         {(p) => <R slug={p.slug} admin><AdminSettings /></R>}
+      </Route>
+      <Route path="/r/:slug/admin/coupons">
+        {(p) => <R slug={p.slug} admin><AdminCoupons /></R>}
       </Route>
       <Route path="/r/:slug/admin">
         {(p) => <R slug={p.slug} admin><AdminDashboard /></R>}

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, menuItemsTable, restaurantsTable, ridersTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, menuItemsTable, restaurantsTable, ridersTable, couponsTable } from "@workspace/db";
 import { z } from "zod";
 import {
   CreateOrderBody,
@@ -50,6 +50,8 @@ async function getOrderWithItems(orderId: number) {
   return {
     ...order,
     total: Number(order.total),
+    discountAmount: Number(order.discountAmount ?? 0),
+    couponCode: order.couponCode ?? null,
     createdAt: order.createdAt.toISOString(),
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
@@ -112,7 +114,10 @@ router.post("/orders", async (req, res): Promise<void> => {
   const { items: orderItems, ...orderData } = parsed.data;
   const restaurantId = rid(req) ?? undefined;
 
-  let total = 0;
+  // Handle optional coupon code passed outside the generated schema
+  const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode.toUpperCase().trim() : null;
+
+  let subtotal = 0;
   const resolvedItems: { menuItemId: number; name: string; quantity: number; unitPrice: number }[] = [];
 
   for (const item of orderItems) {
@@ -127,7 +132,7 @@ router.post("/orders", async (req, res): Promise<void> => {
     }
 
     const unitPrice = Number(menuItem.price);
-    total += unitPrice * item.quantity;
+    subtotal += unitPrice * item.quantity;
     resolvedItems.push({
       menuItemId: menuItem.id,
       name: menuItem.name,
@@ -136,12 +141,47 @@ router.post("/orders", async (req, res): Promise<void> => {
     });
   }
 
+  // Validate coupon if provided
+  let discountAmount = 0;
+  let appliedCouponCode: string | null = null;
+  if (couponCode && restaurantId) {
+    const [coupon] = await db
+      .select()
+      .from(couponsTable)
+      .where(and(
+        eq(couponsTable.restaurantId, restaurantId),
+        eq(couponsTable.code, couponCode),
+      ));
+
+    if (
+      coupon &&
+      coupon.active &&
+      (!coupon.expiresAt || coupon.expiresAt > new Date()) &&
+      (coupon.maxUses === null || coupon.usedCount < coupon.maxUses) &&
+      (!coupon.minOrderAmount || subtotal >= Number(coupon.minOrderAmount))
+    ) {
+      if (coupon.discountType === "percentage") {
+        discountAmount = Math.round((subtotal * Number(coupon.discountValue)) / 100 * 100) / 100;
+      } else {
+        discountAmount = Math.min(Number(coupon.discountValue), subtotal);
+      }
+      appliedCouponCode = coupon.code;
+      // Increment used count
+      await db.update(couponsTable)
+        .set({ usedCount: coupon.usedCount + 1 })
+        .where(eq(couponsTable.id, coupon.id));
+    }
+  }
+
+  const total = Math.max(0, subtotal - discountAmount);
   const paymentStatus = orderData.paymentMethod === "cash_on_delivery" ? "not_required" : "pending";
 
   const [order] = await db.insert(ordersTable).values({
     ...orderData,
     restaurantId,
     total: String(total),
+    discountAmount: String(discountAmount),
+    couponCode: appliedCouponCode,
     status: "pending",
     paymentStatus,
   }).returning();

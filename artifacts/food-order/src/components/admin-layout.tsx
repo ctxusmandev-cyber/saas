@@ -2,7 +2,7 @@ import { Link, useLocation, useParams } from "wouter";
 import {
   LayoutDashboard, UtensilsCrossed, Tags, ShoppingCart,
   ArrowLeft, LogOut, Bell, BellOff, Palette, Menu as MenuIcon, X, Bike, Settings,
-  Volume2, VolumeX, CheckCircle2, AlertCircle, BellRing,
+  Volume2, VolumeX, CheckCircle2, AlertCircle, BellRing, Ticket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminAuth } from "@/lib/admin-auth";
@@ -24,6 +24,7 @@ function buildNav(slug: string) {
     { href: `/r/${slug}/admin/riders`, label: "Riders", icon: Bike },
     { href: `/r/${slug}/admin/menu`, label: "Menu Items", icon: UtensilsCrossed },
     { href: `/r/${slug}/admin/categories`, label: "Categories", icon: Tags },
+    { href: `/r/${slug}/admin/coupons`, label: "Coupons", icon: Ticket },
     { href: `/r/${slug}/admin/appearance`, label: "Appearance", icon: Palette },
     { href: `/r/${slug}/admin/settings`, label: "Settings", icon: Settings },
   ];

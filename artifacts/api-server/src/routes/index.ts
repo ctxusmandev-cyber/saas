@@ -8,6 +8,7 @@ import restaurantsRouter from "./restaurants";
 import ridersRouter from "./riders";
 import settingsRouter from "./settings";
 import storageRouter from "./storage";
+import couponsRouter from "./coupons";
 
 const router: IRouter = Router();
 
@@ -29,5 +30,6 @@ router.use(ordersRouter);
 router.use(ridersRouter);
 router.use(dashboardRouter);
 router.use(storageRouter);
+router.use(couponsRouter);
 
 export default router;

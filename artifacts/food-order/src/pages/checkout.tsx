@@ -12,7 +12,7 @@ import { useCreateOrder, getGetOrderQueryKey } from "@workspace/api-client-react
 import { saveOrderId } from "@/lib/order-history";
 import { useLocation, Link } from "wouter";
 import { useRestaurantPath } from "@/lib/use-slug";
-import { Trash2, Banknote, Smartphone, ShoppingBag, ChevronLeft, Plus, Minus, Tag, Lock, AlertCircle, Copy, CheckCheck } from "lucide-react";
+import { Trash2, Banknote, Smartphone, ShoppingBag, ChevronLeft, Plus, Minus, Tag, Lock, AlertCircle, Copy, CheckCheck, X, Loader2, Ticket, Check } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -137,6 +137,111 @@ function PaymentInstructions({ method, restaurant }: {
   );
 }
 
+interface AppliedCoupon {
+  code: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  description?: string | null;
+  discountAmount: number;
+}
+
+function CouponInput({ subtotal, onApply, onRemove, appliedCoupon, restaurantId }: {
+  subtotal: number;
+  onApply: (coupon: AppliedCoupon) => void;
+  onRemove: () => void;
+  appliedCoupon: AppliedCoupon | null;
+  restaurantId: number;
+}) {
+  const [code, setCode] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleApply = async () => {
+    if (!code.trim()) return;
+    setIsValidating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-restaurant-id": String(restaurantId) },
+        body: JSON.stringify({ code: code.trim(), orderTotal: subtotal }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        onApply({ ...data.coupon, discountAmount: data.discountAmount });
+        setCode("");
+      } else {
+        setError(data.error ?? "Invalid coupon");
+      }
+    } catch {
+      setError("Failed to validate coupon. Please try again.");
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  if (appliedCoupon) {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-xl p-3.5 flex items-center gap-3">
+        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
+          <Ticket className="w-4 h-4 text-green-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-bold text-sm text-green-800">{appliedCoupon.code}</span>
+            <Badge className="bg-green-100 text-green-700 border-green-200 text-[10px] px-1.5 py-0">Applied</Badge>
+          </div>
+          <p className="text-xs text-green-700 mt-0.5">
+            {appliedCoupon.discountType === "percentage"
+              ? `${appliedCoupon.discountValue}% off`
+              : `Rs ${appliedCoupon.discountValue} off`}
+            {" · "}saving {formatCurrency(appliedCoupon.discountAmount)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-1.5 rounded-lg text-green-600 hover:bg-green-100 transition-colors shrink-0"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Enter coupon code"
+            value={code}
+            onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(null); }}
+            className={cn("pl-9 rounded-xl h-10 font-mono uppercase", error && "border-destructive")}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleApply())}
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleApply}
+          disabled={!code.trim() || isValidating}
+          className="h-10 px-4 rounded-xl shrink-0"
+        >
+          {isValidating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+        </Button>
+      </div>
+      {error && (
+        <p className="text-xs text-destructive flex items-center gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function Checkout() {
   const { items, total, removeFromCart, updateQuantity, clearCart } = useCart();
   const [, setLocation] = useLocation();
@@ -144,6 +249,7 @@ export default function Checkout() {
   const createOrder = useCreateOrder();
   const queryClient = useQueryClient();
   const { restaurant } = useRestaurant();
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -157,8 +263,8 @@ export default function Checkout() {
   });
 
   const selectedPayment = form.watch("paymentMethod");
-  const tax = total * 0.0;
-  const grandTotal = total + tax;
+  const discountAmount = appliedCoupon?.discountAmount ?? 0;
+  const grandTotal = Math.max(0, total - discountAmount);
 
   const onSubmit = (data: CheckoutFormValues) => {
     if (items.length === 0) return;
@@ -167,6 +273,8 @@ export default function Checkout() {
         data: {
           ...data,
           items: items.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
+          // @ts-ignore — couponCode is handled server-side, passed through
+          couponCode: appliedCoupon?.code,
         },
       },
       {
@@ -367,7 +475,7 @@ export default function Checkout() {
                   <h2 className="text-xl font-serif font-bold">Order Summary</h2>
                 </div>
 
-                <div className="space-y-3 mb-5 max-h-72 overflow-y-auto pr-1">
+                <div className="space-y-3 mb-5 max-h-64 overflow-y-auto pr-1">
                   {items.map((item) => (
                     <div key={item.menuItemId} className="flex gap-3 items-center bg-muted/40 p-3 rounded-xl border">
                       {item.imageUrl ? (
@@ -406,11 +514,36 @@ export default function Checkout() {
                   ))}
                 </div>
 
-                <div className="border-t pt-4 space-y-2.5">
+                {/* Coupon Section */}
+                <div className="mb-4 pb-4 border-b">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2.5 flex items-center gap-1.5">
+                    <Ticket className="w-3.5 h-3.5" /> Have a coupon?
+                  </p>
+                  {restaurant && (
+                    <CouponInput
+                      subtotal={total}
+                      appliedCoupon={appliedCoupon}
+                      onApply={setAppliedCoupon}
+                      onRemove={() => setAppliedCoupon(null)}
+                      restaurantId={restaurant.id}
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-2.5">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} items)</span>
                     <span>{formatCurrency(total)}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5" />
+                        Coupon ({appliedCoupon?.code})
+                      </span>
+                      <span>− {formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Delivery Fee</span>
                     <span className="text-green-600 font-medium">Free</span>

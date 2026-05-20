@@ -38,6 +38,8 @@ export const ordersTable = pgTable("orders", {
   paymentMethod: paymentMethodEnum("payment_method").notNull().default("cash_on_delivery"),
   paymentStatus: paymentStatusEnum("payment_status").notNull().default("not_required"),
   riderId: integer("rider_id").references(() => ridersTable.id),
+  couponCode: text("coupon_code"),
+  discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }).notNull().default("0"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

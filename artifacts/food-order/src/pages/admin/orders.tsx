@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import {
   RefreshCw, Banknote, Smartphone, MapPin, Phone, Clock,
-  StickyNote, CreditCard, Printer, ChefHat, CalendarIcon, Bike, Download,
+  StickyNote, CreditCard, Printer, ChefHat, CalendarIcon, Bike, Download, Ticket,
 } from "lucide-react";
 import { useRestaurant } from "@/lib/restaurant-context";
 import { Input } from "@/components/ui/input";
@@ -327,6 +327,21 @@ function OrderDetailDialog({
                   <span className="font-semibold">{formatCurrency(item.unitPrice * item.quantity)}</span>
                 </div>
               ))}
+              {(order as any).discountAmount > 0 && (
+                <>
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b text-sm text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(order.total + (order as any).discountAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b text-sm text-green-700 bg-green-50/60">
+                    <span className="flex items-center gap-1.5">
+                      <Ticket className="w-3.5 h-3.5" />
+                      Coupon {(order as any).couponCode ? `(${(order as any).couponCode})` : ""}
+                    </span>
+                    <span className="font-semibold">− {formatCurrency((order as any).discountAmount)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between px-4 py-3 bg-muted/50 font-bold text-base">
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(order.total)}</span>
