@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "mwnXpfy6tkqkpmHHXzLtU"
+uri = "file://artifacts/food-order/public/placeholder-hero.png"
+type = "image"
+title = "Hero background restaurant food"
