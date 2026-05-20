@@ -4,11 +4,19 @@ import { useRestaurant } from "@/lib/restaurant-context";
 import { useRestaurantPath } from "@/lib/use-slug";
 import {
   ShoppingBag, Menu as MenuIcon, X, Phone, MapPin, Clock,
-  Instagram, Facebook, Twitter, ArrowRight, Package,
+  Instagram, Facebook, Twitter, ArrowRight, Package, MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.14 8.14 0 004.77 1.52V6.77a4.86 4.86 0 01-1-.08z" />
+    </svg>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { itemCount, total } = useCart();
@@ -19,6 +27,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [scrolled, setScrolled] = useState(false);
 
   const name = restaurant?.name ?? "Terra";
+  const logoUrl = (restaurant as any)?.logoUrl;
+  const announcementEnabled = (restaurant as any)?.announcementEnabled ?? true;
+  const announcementText = (restaurant as any)?.announcementText || "🎉 Free delivery on orders above Rs. 1,500 · Open daily 11am – 11pm";
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
@@ -39,15 +50,40 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: rpath("/my-orders"), label: "My Orders", match: "/my-orders" },
   ];
 
-  const isHome = location === rpath("") || location === rpath("/");
+  // Social links
+  const instagramUrl = (restaurant as any)?.instagramUrl;
+  const facebookUrl = (restaurant as any)?.facebookUrl;
+  const twitterUrl = (restaurant as any)?.twitterUrl;
+  const tiktokUrl = (restaurant as any)?.tiktokUrl;
+  const whatsappNumber = (restaurant as any)?.whatsappNumber;
+  const businessHours = (restaurant as any)?.businessHours || "Daily 11:00 AM – 11:00 PM";
+
+  const socialLinks = [
+    ...(instagramUrl ? [{ href: instagramUrl, Icon: Instagram, label: "Instagram", color: "hover:bg-pink-500" }] : []),
+    ...(facebookUrl ? [{ href: facebookUrl, Icon: Facebook, label: "Facebook", color: "hover:bg-blue-600" }] : []),
+    ...(twitterUrl ? [{ href: twitterUrl, Icon: Twitter, label: "Twitter / X", color: "hover:bg-sky-500" }] : []),
+    ...(tiktokUrl ? [{ href: tiktokUrl, Icon: TikTokIcon, label: "TikTok", color: "hover:bg-zinc-600" }] : []),
+    ...(whatsappNumber ? [{ href: `https://wa.me/${whatsappNumber}`, Icon: MessageCircle, label: "WhatsApp", color: "hover:bg-green-500" }] : []),
+  ];
+
+  // Fallback social links for demo (when no links are set, show placeholder icons that don't link anywhere)
+  const hasSocialLinks = socialLinks.length > 0;
+  const fallbackSocials = [
+    { Icon: Instagram, label: "Instagram", color: "hover:bg-pink-500" },
+    { Icon: Facebook, label: "Facebook", color: "hover:bg-blue-600" },
+    { Icon: Twitter, label: "Twitter / X", color: "hover:bg-sky-500" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Announcement Bar */}
-      <div className="bg-primary text-primary-foreground text-center text-xs py-2 px-4 font-medium tracking-wide">
-        🎉 Free delivery on orders above Rs. 1,500 &nbsp;·&nbsp; Open daily 11am – 11pm
-      </div>
+      {/* ── Announcement Bar ─────────────────────────────────────────────── */}
+      {announcementEnabled && announcementText && (
+        <div className="bg-primary text-primary-foreground text-center text-xs py-2.5 px-4 font-medium tracking-wide">
+          {announcementText}
+        </div>
+      )}
 
+      {/* ── Navbar ───────────────────────────────────────────────────────── */}
       <header className={cn(
         "sticky top-0 z-50 w-full border-b transition-all duration-300",
         scrolled
@@ -56,10 +92,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}>
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-8 min-w-0">
-            <Link href={rpath("")} className="group shrink-0">
-              <span className="font-serif text-2xl font-bold text-primary group-hover:opacity-75 transition-opacity">
-                {name}
-              </span>
+            <Link href={rpath("")} className="group shrink-0 flex items-center gap-2.5">
+              {logoUrl ? (
+                <>
+                  <img
+                    src={logoUrl}
+                    alt={name}
+                    className="h-9 w-9 object-contain rounded-lg"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                  <span className="font-serif text-xl font-bold text-primary group-hover:opacity-75 transition-opacity hidden sm:block">
+                    {name}
+                  </span>
+                </>
+              ) : (
+                <span className="font-serif text-2xl font-bold text-primary group-hover:opacity-75 transition-opacity">
+                  {name}
+                </span>
+              )}
             </Link>
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
               {navLinks.map((link) => (
@@ -108,13 +158,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* ── Mobile Menu ──────────────────────────────────────────────────── */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="absolute right-0 top-0 h-full w-80 max-w-full bg-background shadow-2xl flex flex-col">
             <div className="flex items-center justify-between p-6 border-b">
-              <span className="font-serif text-2xl font-bold text-primary">{name}</span>
+              <div className="flex items-center gap-2.5">
+                {logoUrl && (
+                  <img src={logoUrl} alt={name} className="h-8 w-8 object-contain rounded-lg" />
+                )}
+                <span className="font-serif text-2xl font-bold text-primary">{name}</span>
+              </div>
               <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
@@ -174,30 +229,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      {/* Footer */}
+      {/* ── Footer ───────────────────────────────────────────────────────── */}
       <footer className="bg-zinc-950 text-zinc-300 mt-16">
         <div className="container mx-auto px-4 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             {/* Brand */}
             <div className="md:col-span-1">
-              <span className="font-serif text-2xl font-bold text-primary block mb-3">{name}</span>
+              <div className="flex items-center gap-3 mb-4">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={name} className="h-10 w-10 object-contain rounded-xl bg-white/10 p-1" />
+                ) : null}
+                <span className="font-serif text-2xl font-bold text-white">{name}</span>
+              </div>
               <p className="text-zinc-400 text-sm leading-relaxed mb-6">
                 {restaurant?.description || "Authentic flavors crafted with passion and the finest local ingredients."}
               </p>
-              <div className="flex gap-2">
-                {[
-                  { Icon: Instagram, label: "Instagram" },
-                  { Icon: Facebook, label: "Facebook" },
-                  { Icon: Twitter, label: "Twitter" },
-                ].map(({ Icon, label }) => (
-                  <button
-                    key={label}
-                    aria-label={label}
-                    className="w-9 h-9 rounded-full bg-zinc-800 hover:bg-primary flex items-center justify-center transition-colors"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                ))}
+              {/* Social icons */}
+              <div className="flex flex-wrap gap-2">
+                {hasSocialLinks ? (
+                  socialLinks.map(({ href, Icon, label, color }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className={cn(
+                        "w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center transition-all duration-200 hover:scale-110",
+                        color
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </a>
+                  ))
+                ) : (
+                  fallbackSocials.map(({ Icon, label, color }) => (
+                    <button
+                      key={label}
+                      aria-label={label}
+                      className={cn(
+                        "w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center transition-all duration-200 hover:scale-110",
+                        color
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
@@ -221,6 +299,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <li><Link href={rpath("/track-order")} className="hover:text-primary transition-colors">Track Your Order</Link></li>
                 <li><Link href={rpath("/my-orders")} className="hover:text-primary transition-colors">My Orders</Link></li>
                 <li><Link href={rpath("/checkout")} className="hover:text-primary transition-colors">Cart & Checkout</Link></li>
+                <li><Link href={rpath("/admin/login")} className="hover:text-primary transition-colors">Admin Login</Link></li>
               </ul>
             </div>
 
@@ -248,8 +327,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
                     <Clock className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <span>Daily 11:00 AM – 11:00 PM</span>
+                  <span>{businessHours}</span>
                 </li>
+                {whatsappNumber && (
+                  <li>
+                    <a
+                      href={`https://wa.me/${whatsappNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-xs bg-green-500/20 text-green-400 hover:bg-green-500/30 px-3 py-1.5 rounded-full transition-colors"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      Chat on WhatsApp
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

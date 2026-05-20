@@ -8,17 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useRestaurant } from "@/lib/restaurant-context";
 import { useParams } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { Palette, ImageIcon, Type, Save, Eye, Smartphone, Upload, X } from "lucide-react";
+import { Palette, ImageIcon, Type, Save, Eye, Smartphone, Upload, X, Image } from "lucide-react";
 
 const PRESET_COLORS = [
-  { label: "Terra Orange", value: "#e35a2a" },
-  { label: "Forest Green", value: "#2d6a4f" },
-  { label: "Royal Blue", value: "#1d4ed8" },
-  { label: "Deep Purple", value: "#7c3aed" },
-  { label: "Ruby Red", value: "#dc2626" },
-  { label: "Gold", value: "#d97706" },
-  { label: "Ocean Teal", value: "#0d9488" },
-  { label: "Rose Pink", value: "#db2777" },
+  { label: "Terra Orange",   value: "#c2410c" },
+  { label: "Crimson Red",    value: "#dc2626" },
+  { label: "Forest Green",   value: "#16a34a" },
+  { label: "Royal Blue",     value: "#1d4ed8" },
+  { label: "Deep Purple",    value: "#7c3aed" },
+  { label: "Gold",           value: "#d97706" },
+  { label: "Ocean Teal",     value: "#0d9488" },
+  { label: "Rose Pink",      value: "#db2777" },
+  { label: "Slate",          value: "#475569" },
+  { label: "Indigo",         value: "#4338ca" },
 ];
 
 function ImageUploadField({
@@ -60,11 +62,11 @@ function ImageUploadField({
 
   return (
     <div className="space-y-3">
-      <Label>{label}</Label>
+      {label && <Label>{label}</Label>}
       {hint && <p className="text-xs text-muted-foreground -mt-1">{hint}</p>}
 
       {value ? (
-        <div className="relative group rounded-lg overflow-hidden border">
+        <div className="relative group rounded-xl overflow-hidden border">
           <img
             src={value}
             alt={label}
@@ -72,39 +74,24 @@ function ImageUploadField({
             onError={(e) => (e.currentTarget.style.display = "none")}
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="gap-1.5"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-            >
+            <Button type="button" size="sm" variant="secondary" className="gap-1.5" onClick={() => fileRef.current?.click()} disabled={uploading}>
               <Upload className="w-3.5 h-3.5" /> Replace
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="destructive"
-              className="gap-1.5"
-              onClick={() => onChange("")}
-            >
+            <Button type="button" size="sm" variant="destructive" className="gap-1.5" onClick={() => onChange("")}>
               <X className="w-3.5 h-3.5" /> Remove
             </Button>
           </div>
         </div>
       ) : (
         <div
-          className={`border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 transition-colors ${aspectClass}`}
+          className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all ${aspectClass}`}
           onClick={() => fileRef.current?.click()}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         >
           <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
           <div className="text-sm text-muted-foreground text-center">
-            {uploading ? "Uploading…" : (
-              <><span className="text-primary font-medium">Click to upload</span> or drag & drop</>
-            )}
+            {uploading ? "Uploading…" : <><span className="text-primary font-medium">Click to upload</span> or drag & drop</>}
           </div>
           <p className="text-xs text-muted-foreground/70">PNG, JPG, WebP · max 15 MB</p>
         </div>
@@ -124,35 +111,106 @@ function ImageUploadField({
         className="text-sm"
       />
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+    </div>
+  );
+}
+
+function LogoUploadField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) { setError("Please select an image file."); return; }
+    if (file.size > 5 * 1024 * 1024) { setError("Logo must be under 5 MB."); return; }
+    setError("");
+    setUploading(true);
+    try {
+      const res = await fetch("/api/storage/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      const { uploadURL, objectPath } = await res.json();
+      await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      onChange(`/api/storage${objectPath}`);
+    } catch {
+      setError("Upload failed. Please try again.");
+    }
+    setUploading(false);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-6">
+        <div
+          className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all shrink-0 overflow-hidden bg-muted/30"
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+        >
+          {value ? (
+            <img src={value} alt="Logo" className="w-full h-full object-contain p-1" onError={(e) => (e.currentTarget.style.display = "none")} />
+          ) : (
+            <div className="flex flex-col items-center gap-1 text-muted-foreground/50 p-2">
+              <Image className="w-7 h-7" />
+              <span className="text-[10px] text-center leading-tight">Upload logo</span>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 space-y-2">
+          <p className="text-sm text-muted-foreground leading-relaxed">Upload a square image (PNG with transparent background recommended). Your logo appears in the navbar and footer.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Upload className="w-3.5 h-3.5" /> {uploading ? "Uploading…" : value ? "Replace Logo" : "Upload Logo"}
+            </Button>
+            {value && (
+              <Button type="button" size="sm" variant="ghost" className="gap-1.5 text-xs text-destructive hover:text-destructive" onClick={() => onChange("")}>
+                <X className="w-3.5 h-3.5" /> Remove
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-xs text-muted-foreground">or paste image URL</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://yourdomain.com/logo.png"
+        className="text-sm"
       />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
     </div>
   );
 }
 
 export default function AdminAppearance() {
-  const { restaurant } = useRestaurant();
+  const { restaurant, refetch } = useRestaurant() as { restaurant: any; refetch?: () => void };
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? restaurant?.slug ?? "terra";
   const { toast } = useToast();
 
-  const [themeColor, setThemeColor] = useState(restaurant?.themeColor ?? "#e35a2a");
+  const [logoUrl, setLogoUrl] = useState(restaurant?.logoUrl ?? "");
+  const [themeColor, setThemeColor] = useState(restaurant?.themeColor ?? "#c2410c");
   const [heroTitle, setHeroTitle] = useState(restaurant?.heroTitle ?? "");
   const [heroSubtitle, setHeroSubtitle] = useState(restaurant?.heroSubtitle ?? "");
   const [heroImageUrl, setHeroImageUrl] = useState(restaurant?.heroImageUrl ?? "");
   const [jazzCashNumber, setJazzCashNumber] = useState(restaurant?.jazzCashNumber ?? "");
   const [easyPaisaNumber, setEasyPaisaNumber] = useState(restaurant?.easyPaisaNumber ?? "");
+  const [savingLogo, setSavingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
     if (restaurant) {
-      setThemeColor(restaurant.themeColor ?? "#e35a2a");
+      setLogoUrl(restaurant.logoUrl ?? "");
+      setThemeColor(restaurant.themeColor ?? "#c2410c");
       setHeroTitle(restaurant.heroTitle ?? "");
       setHeroSubtitle(restaurant.heroSubtitle ?? "");
       setHeroImageUrl(restaurant.heroImageUrl ?? "");
@@ -161,15 +219,31 @@ export default function AdminAppearance() {
     }
   }, [restaurant]);
 
+  const patch = async (body: Record<string, unknown>) => {
+    const res = await fetch(`/api/restaurants/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("Failed to save");
+    if (refetch) refetch();
+  };
+
+  const handleSaveLogo = async () => {
+    setSavingLogo(true);
+    try {
+      await patch({ logoUrl });
+      toast({ title: "Logo saved!", description: "Your logo is now live on the site." });
+    } catch {
+      toast({ title: "Error saving logo", variant: "destructive" });
+    }
+    setSavingLogo(false);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/restaurants/${slug}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ themeColor, heroTitle, heroSubtitle, heroImageUrl }),
-      });
-      if (!res.ok) throw new Error("Failed to save");
+      await patch({ themeColor, heroTitle, heroSubtitle, heroImageUrl });
       toast({ title: "Appearance saved!", description: "Changes are live on your customer site." });
     } catch {
       toast({ title: "Error saving", description: "Please try again.", variant: "destructive" });
@@ -180,12 +254,7 @@ export default function AdminAppearance() {
   const handleSavePayment = async () => {
     setSavingPayment(true);
     try {
-      const res = await fetch(`/api/restaurants/${slug}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jazzCashNumber, easyPaisaNumber }),
-      });
-      if (!res.ok) throw new Error("Failed to save");
+      await patch({ jazzCashNumber, easyPaisaNumber });
       toast({ title: "Payment numbers saved!", description: "Customers will see these at checkout." });
     } catch {
       toast({ title: "Error saving", description: "Please try again.", variant: "destructive" });
@@ -202,14 +271,34 @@ export default function AdminAppearance() {
         </div>
 
         <div className="space-y-6">
-          {/* Theme Color */}
+          {/* ── Logo ──────────────────────────────────────────────────────── */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Image className="h-5 w-5 text-primary" />
+                Restaurant Logo
+              </CardTitle>
+              <CardDescription>Shown in the navbar and footer. Use a square PNG with transparent background.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <LogoUploadField value={logoUrl} onChange={setLogoUrl} />
+              <div className="flex justify-end pt-2">
+                <Button onClick={handleSaveLogo} disabled={savingLogo} className="gap-2 px-8">
+                  <Save className="h-4 w-4" />
+                  {savingLogo ? "Saving..." : "Save Logo"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Theme Color ───────────────────────────────────────────────── */}
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <Palette className="h-5 w-5 text-primary" />
                 Brand Color
               </CardTitle>
-              <CardDescription>Choose the primary color used throughout your site</CardDescription>
+              <CardDescription>The primary color used throughout your site — buttons, accents, navbar highlights</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -222,7 +311,7 @@ export default function AdminAppearance() {
                     style={{
                       backgroundColor: c.value,
                       borderColor: themeColor === c.value ? "#000" : "transparent",
-                      boxShadow: themeColor === c.value ? "0 0 0 2px white, 0 0 0 4px " + c.value : "none",
+                      boxShadow: themeColor === c.value ? `0 0 0 2px white, 0 0 0 4px ${c.value}` : "none",
                     }}
                   />
                 ))}
@@ -237,23 +326,23 @@ export default function AdminAppearance() {
                 <Input
                   value={themeColor}
                   onChange={(e) => setThemeColor(e.target.value)}
-                  placeholder="#e35a2a"
+                  placeholder="#c2410c"
                   className="w-36 font-mono text-sm"
                   maxLength={7}
                 />
-                <div className="flex-1 h-10 rounded-md border" style={{ backgroundColor: themeColor }} />
+                <div className="flex-1 h-10 rounded-lg border shadow-sm" style={{ backgroundColor: themeColor }} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Hero Section Text */}
+          {/* ── Hero Text ─────────────────────────────────────────────────── */}
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <Type className="h-5 w-5 text-primary" />
                 Hero Section Text
               </CardTitle>
-              <CardDescription>The big headline section visitors see first on your homepage</CardDescription>
+              <CardDescription>The big headline and subtitle visitors see first on your homepage</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
@@ -276,14 +365,14 @@ export default function AdminAppearance() {
             </CardContent>
           </Card>
 
-          {/* Hero Image */}
+          {/* ── Hero Image ────────────────────────────────────────────────── */}
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <ImageIcon className="h-5 w-5 text-primary" />
                 Hero Background Image
               </CardTitle>
-              <CardDescription>Upload from your computer or paste a URL. Use a high-quality landscape photo.</CardDescription>
+              <CardDescription>Upload a high-quality landscape photo or paste a URL. Recommended: 1400×600px or wider.</CardDescription>
             </CardHeader>
             <CardContent>
               <ImageUploadField
@@ -295,12 +384,12 @@ export default function AdminAppearance() {
             </CardContent>
           </Card>
 
-          {/* Live Preview */}
+          {/* ── Live Preview ──────────────────────────────────────────────── */}
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <Eye className="h-5 w-5 text-primary" />
-                Live Preview
+                Hero Live Preview
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -308,21 +397,26 @@ export default function AdminAppearance() {
                 className="relative w-full aspect-[16/6] flex items-center justify-center overflow-hidden"
                 style={{
                   backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : undefined,
-                  backgroundColor: themeColor,
+                  backgroundColor: heroImageUrl ? undefined : themeColor,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}
               >
-                <div className="absolute inset-0 bg-black/40" />
-                <div className="relative z-10 text-center text-white px-6">
-                  <h2 className="text-xl md:text-3xl font-bold font-serif leading-tight">
-                    {heroTitle || "Nourish Your Body. Delight Your Soul."}
-                  </h2>
+                <div className="absolute inset-0 bg-black/45" />
+                <div className="relative z-10 text-center text-white px-6 w-full">
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    {logoUrl && (
+                      <img src={logoUrl} alt="Logo" className="h-8 w-8 object-contain rounded-lg bg-white/10 p-0.5" />
+                    )}
+                    <h2 className="text-xl md:text-3xl font-bold font-serif leading-tight">
+                      {heroTitle || "Nourish Your Body. Delight Your Soul."}
+                    </h2>
+                  </div>
                   {heroSubtitle && (
-                    <p className="mt-2 text-sm text-white/80 max-w-md mx-auto line-clamp-2">{heroSubtitle}</p>
+                    <p className="text-sm text-white/80 max-w-md mx-auto line-clamp-2 mb-3">{heroSubtitle}</p>
                   )}
                   <div
-                    className="mt-4 inline-flex items-center gap-2 px-6 py-2 rounded-full text-sm font-semibold text-white"
+                    className="inline-flex items-center gap-2 px-6 py-2 rounded-full text-sm font-semibold text-white shadow-lg"
                     style={{ backgroundColor: themeColor }}
                   >
                     Order Now →
@@ -339,7 +433,7 @@ export default function AdminAppearance() {
             </Button>
           </div>
 
-          {/* Payment Numbers */}
+          {/* ── Payment Numbers ───────────────────────────────────────────── */}
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-base md:text-lg">
@@ -360,7 +454,7 @@ export default function AdminAppearance() {
                   <Input
                     value={jazzCashNumber}
                     onChange={(e) => setJazzCashNumber(e.target.value)}
-                    placeholder="e.g. 0301-1234567"
+                    placeholder="e.g. 0300-1234567"
                   />
                 </div>
                 <div className="space-y-1.5">

@@ -44,8 +44,12 @@ router.get("/restaurants/:slug", async (req, res): Promise<void> => {
 // ─── Update restaurant ───────────────────────────────────────────────────────
 
 router.patch("/restaurants/:slug", async (req, res): Promise<void> => {
-  const { name, adminPassword, description, phone, address, logoUrl, active,
-          themeColor, heroTitle, heroSubtitle, heroImageUrl, jazzCashNumber, easyPaisaNumber } = req.body ?? {};
+  const {
+    name, adminPassword, description, phone, address, logoUrl, active,
+    themeColor, heroTitle, heroSubtitle, heroImageUrl, jazzCashNumber, easyPaisaNumber,
+    instagramUrl, facebookUrl, twitterUrl, tiktokUrl, whatsappNumber,
+    announcementText, announcementEnabled, footerTagline, businessHours,
+  } = req.body ?? {};
   const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = name;
   if (adminPassword !== undefined) updates.adminPassword = adminPassword;
@@ -60,6 +64,15 @@ router.patch("/restaurants/:slug", async (req, res): Promise<void> => {
   if (heroImageUrl !== undefined) updates.heroImageUrl = heroImageUrl;
   if (jazzCashNumber !== undefined) updates.jazzCashNumber = jazzCashNumber;
   if (easyPaisaNumber !== undefined) updates.easyPaisaNumber = easyPaisaNumber;
+  if (instagramUrl !== undefined) updates.instagramUrl = instagramUrl;
+  if (facebookUrl !== undefined) updates.facebookUrl = facebookUrl;
+  if (twitterUrl !== undefined) updates.twitterUrl = twitterUrl;
+  if (tiktokUrl !== undefined) updates.tiktokUrl = tiktokUrl;
+  if (whatsappNumber !== undefined) updates.whatsappNumber = whatsappNumber;
+  if (announcementText !== undefined) updates.announcementText = announcementText;
+  if (announcementEnabled !== undefined) updates.announcementEnabled = announcementEnabled;
+  if (footerTagline !== undefined) updates.footerTagline = footerTagline;
+  if (businessHours !== undefined) updates.businessHours = businessHours;
 
   const [restaurant] = await db.update(restaurantsTable).set(updates).where(eq(restaurantsTable.slug, req.params.slug)).returning();
   if (!restaurant) {

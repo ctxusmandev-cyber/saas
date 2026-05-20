@@ -256,6 +256,18 @@ async function seed() {
       heroImageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1400&q=80",
       jazzCashNumber: "0300-1234567",
       easyPaisaNumber: "0311-9876543",
+      // Social media
+      instagramUrl: "https://instagram.com/terra.restaurant",
+      facebookUrl: "https://facebook.com/terra.restaurant",
+      twitterUrl: "https://twitter.com/terra_pk",
+      tiktokUrl: "https://tiktok.com/@terra.restaurant",
+      whatsappNumber: "924235000000",
+      // Announcement bar
+      announcementText: "🎉 Free delivery on orders above Rs. 1,500 · Open daily 11am – 11pm",
+      announcementEnabled: true,
+      // Footer & hours
+      footerTagline: "Authentic flavors from the heart of the earth",
+      businessHours: "Daily 11:00 AM – 11:00 PM",
     })
     .where(eq(schema.restaurantsTable.id, restaurant.id));
 

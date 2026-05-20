@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { setDefaultHeader } from "@workspace/api-client-react";
 
 export interface RestaurantInfo {
@@ -16,18 +16,32 @@ export interface RestaurantInfo {
   heroImageUrl?: string | null;
   jazzCashNumber?: string | null;
   easyPaisaNumber?: string | null;
+  // Social media
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  twitterUrl?: string | null;
+  tiktokUrl?: string | null;
+  whatsappNumber?: string | null;
+  // Announcement bar
+  announcementText?: string | null;
+  announcementEnabled?: boolean | null;
+  // Footer / business
+  footerTagline?: string | null;
+  businessHours?: string | null;
 }
 
 interface RestaurantContextType {
   restaurant: RestaurantInfo | null;
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 const RestaurantContext = createContext<RestaurantContextType>({
   restaurant: null,
   isLoading: false,
   error: null,
+  refetch: () => {},
 });
 
 function hexToHsl(hex: string): string {
@@ -54,7 +68,7 @@ export function RestaurantProvider({ slug, children }: { slug: string; children:
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setIsLoading(true);
     fetch(`/api/restaurants/${slug}`)
       .then((r) => {
@@ -70,11 +84,12 @@ export function RestaurantProvider({ slug, children }: { slug: string; children:
         setError(e.message);
         setIsLoading(false);
       });
-
-    return () => {
-      setDefaultHeader("x-restaurant-id", null);
-    };
   }, [slug]);
+
+  useEffect(() => {
+    load();
+    return () => { setDefaultHeader("x-restaurant-id", null); };
+  }, [load]);
 
   useEffect(() => {
     if (!restaurant?.themeColor) return;
@@ -83,9 +98,7 @@ export function RestaurantProvider({ slug, children }: { slug: string; children:
     style.id = `theme-${slug}`;
     style.textContent = `:root { --primary: ${hsl}; --ring: ${hsl}; }`;
     document.head.appendChild(style);
-    return () => {
-      document.getElementById(`theme-${slug}`)?.remove();
-    };
+    return () => { document.getElementById(`theme-${slug}`)?.remove(); };
   }, [restaurant?.themeColor, slug]);
 
   if (isLoading) {
@@ -125,7 +138,7 @@ export function RestaurantProvider({ slug, children }: { slug: string; children:
   }
 
   return (
-    <RestaurantContext.Provider value={{ restaurant, isLoading, error }}>
+    <RestaurantContext.Provider value={{ restaurant, isLoading, error, refetch: load }}>
       {children}
     </RestaurantContext.Provider>
   );

@@ -18,6 +18,19 @@ export const restaurantsTable = pgTable("restaurants", {
   heroImageUrl: text("hero_image_url"),
   jazzCashNumber: text("jazz_cash_number"),
   easyPaisaNumber: text("easy_paisa_number"),
+  // Social media
+  instagramUrl: text("instagram_url"),
+  facebookUrl: text("facebook_url"),
+  twitterUrl: text("twitter_url"),
+  tiktokUrl: text("tiktok_url"),
+  whatsappNumber: text("whatsapp_number"),
+  // Announcement bar
+  announcementText: text("announcement_text"),
+  announcementEnabled: boolean("announcement_enabled").notNull().default(true),
+  // Footer
+  footerTagline: text("footer_tagline"),
+  // Business hours (plain text, e.g. "Daily 11 AM – 11 PM")
+  businessHours: text("business_hours"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
