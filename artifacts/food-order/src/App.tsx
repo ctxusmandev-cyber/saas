@@ -6,6 +6,8 @@ import { CartProvider } from "./lib/cart";
 import { AdminAuthProvider, SuperAdminProvider } from "./lib/admin-auth";
 import { AdminGuard } from "@/components/admin-guard";
 import { RestaurantProvider } from "@/lib/restaurant-context";
+import { CustomerAuthProvider, useCustomerAuth } from "./lib/customer-auth";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 import { useEffect } from "react";
 
 import Home from "@/pages/home";
@@ -13,6 +15,9 @@ import Menu from "@/pages/menu";
 import Checkout from "@/pages/checkout";
 import OrderTracking from "@/pages/order";
 import MyOrders from "@/pages/my-orders";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
+import Account from "@/pages/account";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminMenu from "@/pages/admin/menu";
@@ -35,6 +40,14 @@ function ScrollToTop() {
   return null;
 }
 
+function TokenSync() {
+  const { token } = useCustomerAuth();
+  useEffect(() => {
+    setAuthTokenGetter(token ? () => token : null);
+  }, [token]);
+  return null;
+}
+
 function R({
   slug,
   admin = false,
@@ -46,9 +59,12 @@ function R({
 }) {
   return (
     <RestaurantProvider slug={slug}>
-      <CartProvider>
-        {admin ? <AdminGuard>{children}</AdminGuard> : children}
-      </CartProvider>
+      <CustomerAuthProvider>
+        <TokenSync />
+        <CartProvider>
+          {admin ? <AdminGuard>{children}</AdminGuard> : children}
+        </CartProvider>
+      </CustomerAuthProvider>
     </RestaurantProvider>
   );
 }
@@ -108,6 +124,15 @@ function Router() {
       </Route>
 
       {/* ── Restaurant customer routes ────────────────── */}
+      <Route path="/r/:slug/login">
+        {(p) => <R slug={p.slug}><Login /></R>}
+      </Route>
+      <Route path="/r/:slug/signup">
+        {(p) => <R slug={p.slug}><Signup /></R>}
+      </Route>
+      <Route path="/r/:slug/account">
+        {(p) => <R slug={p.slug}><Account /></R>}
+      </Route>
       <Route path="/r/:slug/track-order">
         {(p) => <R slug={p.slug}><TrackOrder /></R>}
       </Route>

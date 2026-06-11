@@ -1,0 +1,2 @@
+- [Customer Auth System](customer-auth.md) — JWT + bcrypt email/password auth for customers; setAuthTokenGetter wires token into all API calls automatically.
+- [Terra Auth Routes](customer-auth.md) — POST /auth/register, /auth/login, PATCH /auth/profile, GET /auth/me, GET /auth/orders; all live in api-server/src/routes/auth.ts.

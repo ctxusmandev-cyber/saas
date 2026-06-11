@@ -176,6 +176,8 @@ router.post("/orders", async (req, res): Promise<void> => {
   const total = Math.max(0, subtotal - discountAmount);
   const paymentStatus = orderData.paymentMethod === "cash_on_delivery" ? "not_required" : "pending";
 
+  const userId: number | undefined = (req as any).userId ?? undefined;
+
   const [order] = await db.insert(ordersTable).values({
     ...orderData,
     restaurantId,
@@ -184,6 +186,7 @@ router.post("/orders", async (req, res): Promise<void> => {
     couponCode: appliedCouponCode,
     status: "pending",
     paymentStatus,
+    userId: userId ?? null,
   }).returning();
 
   await db.insert(orderItemsTable).values(

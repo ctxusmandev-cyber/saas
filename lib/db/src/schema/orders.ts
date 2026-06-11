@@ -1,6 +1,7 @@
 import { pgTable, text, serial, timestamp, numeric, integer, pgEnum } from "drizzle-orm/pg-core";
 import { restaurantsTable } from "./restaurants";
 import { ridersTable } from "./riders";
+import { usersTable } from "./users";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { menuItemsTable } from "./menu-items";
@@ -40,6 +41,7 @@ export const ordersTable = pgTable("orders", {
   riderId: integer("rider_id").references(() => ridersTable.id),
   couponCode: text("coupon_code"),
   discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }).notNull().default("0"),
+  userId: integer("user_id").references(() => usersTable.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

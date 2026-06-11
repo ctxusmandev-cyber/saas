@@ -4,10 +4,11 @@ import { formatCurrency } from "@/lib/format";
 import { getOrderIds } from "@/lib/order-history";
 import { Link } from "wouter";
 import { useRestaurantPath } from "@/lib/use-slug";
+import { useCustomerAuth } from "@/lib/customer-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, ChevronRight, ShoppingBag, Package, CheckCircle2, Utensils, Bike, XCircle } from "lucide-react";
+import { Clock, ChevronRight, ShoppingBag, Package, CheckCircle2, Utensils, Bike, XCircle, User } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; step: number }> = {
   pending:   { label: "Order Received",       color: "bg-amber-100 text-amber-800 border-amber-200",     icon: <Clock className="w-3.5 h-3.5" />,       step: 1 },
@@ -108,9 +109,12 @@ function OrderCard({ orderId }: { orderId: number }) {
 
 export default function MyOrders() {
   const rpath = useRestaurantPath();
+  const { user } = useCustomerAuth();
   const orderIds = getOrderIds();
 
-  if (orderIds.length === 0) {
+  const hasOrders = orderIds.length > 0;
+
+  if (!hasOrders) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-24 max-w-2xl text-center">
@@ -119,11 +123,22 @@ export default function MyOrders() {
           </div>
           <h1 className="text-4xl font-serif font-bold mb-3">No Orders Yet</h1>
           <p className="text-muted-foreground text-lg mb-8">
-            You haven't placed any orders on this device. Start exploring our menu!
+            {user
+              ? "You haven't placed any orders. Start exploring our menu!"
+              : "No orders found on this device. Sign in to see your full order history."}
           </p>
-          <Button asChild size="lg">
-            <Link href={rpath("/menu")}>Browse Menu</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg">
+              <Link href={rpath("/menu")}>Browse Menu</Link>
+            </Button>
+            {!user && (
+              <Button variant="outline" asChild size="lg">
+                <Link href={rpath("/login")}>
+                  <User className="w-4 h-4 mr-2" />Sign In
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </Layout>
     );
@@ -132,10 +147,32 @@ export default function MyOrders() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-serif font-bold mb-2">My Orders</h1>
-          <p className="text-muted-foreground">Track your orders and view your order history. Updates every 15 seconds.</p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-serif font-bold mb-2">My Orders</h1>
+            <p className="text-muted-foreground">Track your orders and view your order history. Updates every 15 seconds.</p>
+          </div>
+          {user && (
+            <Button variant="outline" size="sm" asChild className="shrink-0 rounded-xl gap-1.5">
+              <Link href={rpath("/account")}>
+                <User className="w-3.5 h-3.5" />Account
+              </Link>
+            </Button>
+          )}
         </div>
+
+        {!user && (
+          <div className="mb-6 bg-primary/5 border border-primary/20 rounded-xl px-5 py-4 flex items-center gap-3">
+            <User className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Sign in to see your full order history</p>
+              <p className="text-xs text-muted-foreground">Orders placed while signed in are saved to your account.</p>
+            </div>
+            <Link href={rpath("/login")}>
+              <Button size="sm" variant="outline" className="shrink-0 rounded-xl">Sign In</Button>
+            </Link>
+          </div>
+        )}
 
         <div className="space-y-4">
           {orderIds.map((id) => <OrderCard key={id} orderId={id} />)}

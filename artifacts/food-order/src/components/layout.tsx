@@ -2,12 +2,14 @@ import { Link, useLocation } from "wouter";
 import { useCart } from "@/lib/cart";
 import { useRestaurant } from "@/lib/restaurant-context";
 import { useRestaurantPath } from "@/lib/use-slug";
+import { useCustomerAuth } from "@/lib/customer-auth";
 import {
   ShoppingBag, Menu as MenuIcon, X, Phone, MapPin, Clock,
   Instagram, Facebook, Twitter, ArrowRight, Package, MessageCircle,
+  User, LogOut, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -23,8 +25,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { restaurant } = useRestaurant();
   const rpath = useRestaurantPath();
+  const { user, logout } = useCustomerAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const name = restaurant?.name ?? "Terra";
   const logoUrl = (restaurant as any)?.logoUrl;
@@ -131,6 +146,49 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Auth button — desktop only */}
+            <div className="hidden md:block relative" ref={userMenuRef}>
+              {user ? (
+                <>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/60 hover:border-border hover:bg-muted/50 transition-all text-sm font-medium"
+                  >
+                    <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <span className="max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", userMenuOpen && "rotate-180")} />
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-card border rounded-xl shadow-lg overflow-hidden z-50">
+                      <div className="px-4 py-3 border-b">
+                        <p className="font-semibold text-sm truncate">{user.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                      <Link href={rpath("/account")} onClick={() => setUserMenuOpen(false)}>
+                        <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-muted text-sm cursor-pointer">
+                          <Package className="w-4 h-4 text-muted-foreground" />My Account
+                        </div>
+                      </Link>
+                      <button
+                        onClick={() => { logout(); setUserMenuOpen(false); }}
+                        className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-muted text-sm cursor-pointer w-full text-destructive"
+                      >
+                        <LogOut className="w-4 h-4" />Sign Out
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link href={rpath("/login")}>
+                  <Button variant="outline" size="sm" className="gap-1.5 rounded-xl">
+                    <User className="w-3.5 h-3.5" />Sign In
+                  </Button>
+                </Link>
+              )}
+            </div>
+
             <Link href={rpath("/checkout")}>
               <Button
                 variant={itemCount > 0 ? "default" : "outline"}
@@ -190,14 +248,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <ArrowRight className="ml-auto h-4 w-4 opacity-40" />
                 </Link>
               ))}
-              <Link
-                href={rpath("/my-orders")}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-foreground/70 hover:bg-muted transition-colors"
-              >
-                <Package className="h-4 w-4" />
-                My Orders
-                <ArrowRight className="ml-auto h-4 w-4 opacity-40" />
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href={rpath("/account")}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-foreground/70 hover:bg-muted transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    My Account
+                    <ArrowRight className="ml-auto h-4 w-4 opacity-40" />
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-destructive hover:bg-muted transition-colors w-full text-left"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href={rpath("/login")}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-foreground/70 hover:bg-muted transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  Sign In / Register
+                  <ArrowRight className="ml-auto h-4 w-4 opacity-40" />
+                </Link>
+              )}
             </nav>
             {itemCount > 0 && (
               <div className="p-5 border-t bg-muted/30">

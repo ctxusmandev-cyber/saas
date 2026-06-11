@@ -14,6 +14,10 @@ import { useCart } from "@/lib/cart";
 import { Badge } from "@/components/ui/badge";
 import { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination, A11y } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 
 const WHY_US = [
   { icon: Leaf,       title: "Farm Fresh",    desc: "Locally sourced, seasonal ingredients from trusted farmers." },
@@ -26,6 +30,9 @@ const TESTIMONIALS = [
   { name: "Ayesha R.",  stars: 5, text: "Absolutely amazing food! The Smash Burger is out of this world. Fast delivery and everything arrived piping hot.", location: "DHA, Lahore" },
   { name: "Usman K.",   stars: 5, text: "Been ordering every Friday for a month. Quality never drops. The deals are genuinely great value — Party Platter is a must!", location: "Gulberg, Lahore" },
   { name: "Fatima M.",  stars: 5, text: "The Chicken Tikka Pizza is something else — I've had it from everywhere but this hits differently. Highly recommend.", location: "Bahria Town" },
+  { name: "Hamza T.",   stars: 5, text: "Ordered for a family of 10 — everything arrived hot, on time and perfectly packed. Will definitely be ordering again.", location: "Johar Town, Lahore" },
+  { name: "Sana B.",    stars: 5, text: "The presentation alone is 10/10 but the taste is even better. Finally a place that takes quality seriously.", location: "Model Town" },
+  { name: "Bilal A.",   stars: 5, text: "Tried the Crispy Chicken Deal and was blown away. Great portions, reasonable prices, and super fast delivery!", location: "Cantt, Lahore" },
 ];
 
 function StarRating({ count }: { count: number }) {
@@ -365,9 +372,9 @@ export default function Home() {
         </div>
       </FadeIn>
 
-      {/* ── Testimonials ─────────────────────────────────────── */}
-      <FadeIn className="py-16 md:py-24 px-4 bg-muted/30">
-        <div className="max-w-7xl mx-auto">
+      {/* ── Testimonials (Swiper carousel) ────────────────── */}
+      <FadeIn className="py-16 md:py-24 bg-muted/30 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-14">
             <p className="text-primary font-medium text-sm uppercase tracking-widest mb-2">Loved By Many</p>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground">What Our Customers Say</h2>
@@ -378,24 +385,37 @@ export default function Home() {
               <span className="ml-2 text-muted-foreground text-sm font-medium">4.9 out of 5 · 200+ reviews</span>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        </div>
+        <div className="max-w-7xl mx-auto px-2 md:px-4">
+          <Swiper
+            modules={[Autoplay, Pagination, A11y]}
+            spaceBetween={24}
+            slidesPerView={1}
+            breakpoints={{
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+            }}
+            loop
+            autoplay={{ delay: 4500, disableOnInteraction: false, pauseOnMouseEnter: true }}
+            pagination={{ clickable: true, bulletActiveClass: "swiper-pagination-bullet-active !bg-primary !opacity-100", bulletClass: "swiper-pagination-bullet !bg-muted-foreground/40 !opacity-100 !w-2 !h-2 !mx-1 !rounded-full inline-block !transition-all" }}
+            className="pb-12"
+          >
             {TESTIMONIALS.map((t, idx) => (
-              <div
-                key={idx}
-                className="bg-card rounded-2xl border p-7 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4"
-              >
-                <Quote className="h-8 w-8 text-primary/20 shrink-0" />
-                <p className="text-foreground/80 text-sm leading-relaxed flex-1 italic">"{t.text}"</p>
-                <div className="flex items-center justify-between gap-3 pt-3 border-t border-border/50">
-                  <div>
-                    <p className="font-semibold text-sm">{t.name}</p>
-                    <p className="text-muted-foreground text-xs">{t.location}</p>
+              <SwiperSlide key={idx} className="h-auto">
+                <div className="bg-card rounded-2xl border p-7 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4 h-full">
+                  <Quote className="h-8 w-8 text-primary/20 shrink-0" />
+                  <p className="text-foreground/80 text-sm leading-relaxed flex-1 italic">"{t.text}"</p>
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-border/50">
+                    <div>
+                      <p className="font-semibold text-sm">{t.name}</p>
+                      <p className="text-muted-foreground text-xs">{t.location}</p>
+                    </div>
+                    <StarRating count={t.stars} />
                   </div>
-                  <StarRating count={t.stars} />
                 </div>
-              </div>
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
       </FadeIn>
 

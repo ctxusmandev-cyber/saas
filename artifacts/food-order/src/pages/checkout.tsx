@@ -17,7 +17,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useRestaurant } from "@/lib/restaurant-context";
-import { useState } from "react";
+import { useCustomerAuth } from "@/lib/customer-auth";
+import { useState, useEffect } from "react";
 
 const PAYMENT_METHODS = [
   {
@@ -249,6 +250,7 @@ export default function Checkout() {
   const createOrder = useCreateOrder();
   const queryClient = useQueryClient();
   const { restaurant } = useRestaurant();
+  const { user } = useCustomerAuth();
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
   const form = useForm<CheckoutFormValues>({
@@ -261,6 +263,13 @@ export default function Checkout() {
       paymentMethod: "cash_on_delivery",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.setValue("customerName", user.name, { shouldValidate: false });
+      if (user.phone) form.setValue("customerPhone", user.phone, { shouldValidate: false });
+    }
+  }, [user?.id]);
 
   const selectedPayment = form.watch("paymentMethod");
   const discountAmount = appliedCoupon?.discountAmount ?? 0;
